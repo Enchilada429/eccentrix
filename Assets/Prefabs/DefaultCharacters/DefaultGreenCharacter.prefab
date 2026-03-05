@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4032219692851273528}
   - component: {fileID: 4167794526501956983}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: BodyCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -80,9 +80,11 @@ GameObject:
   - component: {fileID: 2212181231317287953}
   - component: {fileID: 5215224677623546664}
   - component: {fileID: 8851508851398490016}
+  - component: {fileID: -7465950121176856733}
   - component: {fileID: 7270297091187528728}
   - component: {fileID: 491403486299004819}
-  m_Layer: 0
+  - component: {fileID: 6703584460888883520}
+  m_Layer: 7
   m_Name: DefaultGreenCharacter
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -182,6 +184,24 @@ MonoBehaviour:
   _bodyColl: {fileID: 4167794526501956983}
   _feetColl: {fileID: 304252457763619711}
   _rb: {fileID: 7270297091187528728}
+--- !u!114 &-7465950121176856733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6196208491355342388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19f547e7628579b488d156957474268d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StandardCharacterAttack
+  MoveStats: {fileID: 11400000, guid: e47f6e69201e60b46a31abe101bd275b, type: 2}
+  AttackStats: {fileID: 11400000, guid: 9680926e8ac4a394f9ab574eba40e7b0, type: 2}
+  _playerInput: {fileID: 491403486299004819}
+  _bodyColl: {fileID: 4167794526501956983}
+  _feetColl: {fileID: 304252457763619711}
+  _rb: {fileID: 7270297091187528728}
 --- !u!50 &7270297091187528728
 Rigidbody2D:
   serializedVersion: 5
@@ -239,6 +259,50 @@ MonoBehaviour:
   m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &6703584460888883520
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6196208491355342388}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a7ebd88795a6d7449f027e5ed54fa75, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::StandardPlayerHealth
+  MaxHealth: 100
+  CurrentHealth: 100
+  onHit:
+    m_PersistentCalls:
+      m_Calls: []
+  onDeath:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 491403486299004819}
+        m_TargetAssemblyTypeName: UnityEngine.InputSystem.PlayerInput, Unity.InputSystem
+        m_MethodName: set_enabled
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 6196208491355342388}
+        m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+        m_MethodName: SetActive
+        m_Mode: 6
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!1 &8101045641541410058
 GameObject:
   m_ObjectHideFlags: 0
@@ -249,7 +313,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8683809958775560145}
   - component: {fileID: 304252457763619711}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: FeetCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
