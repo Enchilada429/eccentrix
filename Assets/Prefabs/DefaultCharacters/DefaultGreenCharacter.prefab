@@ -196,12 +196,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 19f547e7628579b488d156957474268d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StandardCharacterAttack
-  MoveStats: {fileID: 11400000, guid: e47f6e69201e60b46a31abe101bd275b, type: 2}
-  AttackStats: {fileID: 11400000, guid: 9680926e8ac4a394f9ab574eba40e7b0, type: 2}
-  _playerInput: {fileID: 491403486299004819}
-  _bodyColl: {fileID: 4167794526501956983}
-  _feetColl: {fileID: 304252457763619711}
   _rb: {fileID: 7270297091187528728}
+  _playerInput: {fileID: 491403486299004819}
+  _attackStats: {fileID: 11400000, guid: 9680926e8ac4a394f9ab574eba40e7b0, type: 2}
 --- !u!50 &7270297091187528728
 Rigidbody2D:
   serializedVersion: 5

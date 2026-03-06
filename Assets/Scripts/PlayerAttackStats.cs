@@ -3,20 +3,34 @@ using System.Collections.Generic;
 using UnityEngine.InputSystem;
 using System;
 
+
 [Serializable]
 public struct AttackInfo
 {
     public int Damage;
     public float Knockback;
-    public float StaggerDurationSeconds;
+    public float StaggerDuration;
     // TODO: somehow store info about the animations and collision boxes to play/enable whenever doing the attack
+
+    public AttackInfo(int damage, float knockback, float staggerDur)
+    {
+        Damage = damage;
+        Knockback = knockback;
+        StaggerDuration = staggerDur;
+    }
 }
 
 [Serializable]
 public struct ComboInfo
 {
-    public List<CharAction> ConsecutiveActions;
+    public List<StandardCharacterAttack.AttackDirection> Buffer;
     public AttackInfo Attack;
+
+    public ComboInfo(List<StandardCharacterAttack.AttackDirection> buffer, AttackInfo attack)
+    {
+        Buffer = buffer;
+        Attack = attack;
+    }
 }
 
 
@@ -25,36 +39,21 @@ public class PlayerAttackStats : ScriptableObject
 {
     public LayerMask CharacterLayer;
 
+    [Header("Normal Attacks")]
+    public AttackInfo NormalAttackLeft;
+    public AttackInfo NormalAttackRight;
+    public AttackInfo NormalAttackUp;
+    public AttackInfo NormalAttackDown;
 
-    [Header("Normal Ground Attacks")]
-    public AttackInfo NormalGroundAttackLeft;
-    public AttackInfo NormalGroundAttackRight;
-    public AttackInfo NormalGroundAttackUp;
-
-
-    [Header("Normal Air Attacks")]
-    public AttackInfo NormalAirAttackLeft;
-    public AttackInfo NormalAirAttackRight;
-    public AttackInfo NormalAirAttackUp;
-    public AttackInfo NormalAirAttackDown;
-
-
-    [Header("Strong Ground Attacks")]
-    [Range(1f, 4f)] public float TimeHeldForStrongAttack;
-    public AttackInfo StrongGroundAttackLeft;
-    public AttackInfo StrongGroundAttackRight;
-    public AttackInfo StrongGroundAttackUp;
-
-
-    [Header("Strong Air Attacks")]
-    public AttackInfo StrongAirAttackLeft;
-    public AttackInfo StrongAirAttackRight;
-    public AttackInfo StrongAirAttackUp;
-    public AttackInfo StrongAirAttackDown;
-
+    [Header("Strong Attacks")]
+    public AttackInfo StrongAttackLeft;
+    public AttackInfo StrongAttackRight;
+    public AttackInfo StrongAttackUp;
+    public AttackInfo StrongAttackDown;
+    public float TimeToExecuteStrongAttack = 2.5f;
 
     [Header("Special Attacks")]
-    public List<ComboInfo> Combos;
-    public int ComboBufferClearFrames = 120; // how long before an action is cleared from the buffer, assumed 60fps
+    public List<ComboInfo> SpecialCombos = new();
+    public float TimeBeforeBufferClear = 2f;
 }
 

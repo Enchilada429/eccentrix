@@ -1,270 +1,178 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 
-public enum CharAction
-{
-    IDLE, MOVE_LEFT, MOVE_RIGHT, CROUCH, JUMP, DOUBLE_JUMP,
-    NORM_ATK_GND_LEFT, NORM_ATK_GND_RIGHT, NORM_ATK_GND_UP,
-    NORM_ATK_AIR_LEFT, NORM_ATK_AIR_RIGHT, NORM_ATK_AIR_UP, NORM_ATK_AIR_DOWN,
-    STR_ATK_GND_LEFT, STR_ATK_GND_RIGHT, STR_ATK_GND_UP,
-    STR_ATK_AIR_LEFT, STR_ATK_AIR_RIGHT, STR_ATK_AIR_UP, STR_ATK_AIR_DOWN,
-    SPECIAL
-}
-
-public class CharActionComparer : IComparer<Tuple<CharAction, int>>
-{
-    // sorts based on the most RECENT actions, so if the frame > other then return <0 to make it sort before it
-    int IComparer<Tuple<CharAction, int>>.Compare(Tuple<CharAction, int> x, Tuple<CharAction, int> y)
-    {
-        if (x.Item2 > y.Item2)
-        {
-            return -1;
-        }
-        else if (x.Item2 < y.Item2)
-        {
-            return 1;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-}
-
-
 public class StandardCharacterAttack : MonoBehaviour
 {
+    public enum AttackState
+    {
+        IDLE, PENDING, NORMAL, STRONG, SPECIAL
+    };
+    public enum AttackDirection
+    {
+        LEFT, RIGHT, UP, DOWN
+    }
+
     // components
-    public PlayerMovementStats MoveStats;
-    public PlayerAttackStats AttackStats;
+    [SerializeField] private Rigidbody2D _rb;
     [SerializeField] private PlayerInput _playerInput;
-    [SerializeField] private Collider2D _bodyColl;
-    [SerializeField] private Collider2D _feetColl;
-    [SerializeField] private Rigidbody2D _rb;    
+    [SerializeField] private PlayerAttackStats _attackStats;
 
 
     // attack variables
-
-
-    // move variables
-    private bool _isGrounded = false;
-    private bool _bumpedHead = false;
-
-
-    // timers
+    private AttackState _atkState = AttackState.IDLE;
+    private List<AttackDirection> _attackBuffer = new();
     private float _timeUntilStrongAttack = 0f;
+    private float _timeUntilBufferClear = 0f;
+    private float _timeUntilAttackFinished = 0f;
+
+    private bool _isFacingRight = true;
 
 
-    // buffers
-    private List<Tuple<CharAction, int>> _prevActionsPerformed = new();
-
-
-    // raycasts
-    private RaycastHit2D _groundHit;
-    private RaycastHit2D _headHit;
-
-
-
-
-    // input checks
-    public Vector2 MoveInput => _playerInput.actions["move"].ReadValue<Vector2>();
-    public bool JumpPressed => _playerInput.actions["jump"].WasPressedThisFrame();
-    public bool JumpHeld => _playerInput.actions["jump"].IsPressed();
-    public bool JumpReleased => _playerInput.actions["jump"].WasReleasedThisFrame();
-    public bool RunHeld => _playerInput.actions["sprint"].IsPressed();    
-    // the look vector is from 0,0 bottom left to 1,1, top right so normalise to be between -1,-1 bottom left and 0.5,0.5 top right
-    public Vector2 LookInput => Camera.main.ScreenToViewportPoint(_playerInput.actions["look"].ReadValue<Vector2>());
+    // inputs
     public bool AttackPressed => _playerInput.actions["attack"].WasPressedThisFrame();
     public bool AttackHeld => _playerInput.actions["attack"].IsPressed();
     public bool AttackReleased => _playerInput.actions["attack"].WasReleasedThisFrame();
+    public Vector2 MoveInput => _playerInput.actions["move"].ReadValue<Vector2>().normalized;
+    public AttackDirection AttackDir =>
+        MoveInput.x < 0 ? AttackDirection.LEFT
+        : MoveInput.x > 0 ? AttackDirection.RIGHT
+        : MoveInput.y < 0 ? AttackDirection.DOWN
+        : MoveInput.y > 0 ? AttackDirection.UP
+        : _isFacingRight ? AttackDirection.RIGHT : AttackDirection.LEFT;
 
 
-    void Awake()
+    private bool HasPerformedCombo()
     {
-        if (!_playerInput) _playerInput = GetComponent<PlayerInput>();
-        if (!_rb) _rb = GetComponent<Rigidbody2D>();
+        // loop through all the combos and if any match the attack buffer then return true
+        foreach (ComboInfo combo in _attackStats.SpecialCombos)
+        {
+            // need to check from the recent dir backwards since we dont care about actions before the possible combo
+            if (_attackBuffer.Count < combo.Buffer.Count) continue;
+            else if (_attackBuffer.Last() != combo.Buffer.Last()) continue;
+            else
+            {
+                for (int i = 0; i < combo.Buffer.Count; i++)
+                {
+                    if (_attackBuffer[_attackBuffer.Count-1-i] != combo.Buffer[combo.Buffer.Count-1-i]) return false;
+                }
+                return true;
+            }
+        }
+        return false;
     }
+
     
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
+    private void TransitionState()
+    {
+        // checks the current state and other variables, then changes the current enum state based on it
+        switch (_atkState)
+        {
+            case AttackState.IDLE:
+                if (AttackPressed)
+                {
+                    _atkState = AttackState.PENDING;
+                    _attackBuffer.Add(AttackDir);
+                    _timeUntilStrongAttack = _attackStats.TimeToExecuteStrongAttack;
+                }
+                else if (_timeUntilBufferClear > 0f)
+                {
+                    _timeUntilBufferClear -= Time.deltaTime;
+                }
+                else if (_timeUntilBufferClear <= 0f)
+                {
+                    _attackBuffer.Clear();
+                }
+                break;
+
+            case AttackState.PENDING:
+                if (HasPerformedCombo())
+                {
+                    _atkState = AttackState.SPECIAL;
+                    _timeUntilAttackFinished = 3f; // TODO: replace with animator length
+                }
+                else if (AttackHeld)
+                {
+                    _timeUntilStrongAttack -= Time.deltaTime;
+                }
+                else if (AttackReleased && _timeUntilStrongAttack <= 0f)
+                {
+                    _atkState = AttackState.STRONG;
+                    _timeUntilAttackFinished = 2f; // TODO: replace with animator length
+                }
+                else if (AttackReleased && _timeUntilStrongAttack > 0f)
+                {
+                    _atkState = AttackState.NORMAL;
+                    _timeUntilAttackFinished = 1f; // TODO: replace with animator length
+                }
+                break;
+
+            case AttackState.NORMAL:
+                print("normal attack");
+                if (_timeUntilAttackFinished > 0f)
+                {
+                    _timeUntilAttackFinished -= Time.deltaTime;
+                }
+                else
+                {
+                    _atkState = AttackState.IDLE;
+                    _timeUntilBufferClear = _attackStats.TimeBeforeBufferClear;
+                }
+                break;
+
+            case AttackState.STRONG:
+                print("strong attack");
+                if (_timeUntilAttackFinished > 0f)
+                {
+                    _timeUntilAttackFinished -= Time.deltaTime;
+                }
+                else
+                {
+                    _atkState = AttackState.IDLE;
+                    _timeUntilBufferClear = _attackStats.TimeBeforeBufferClear;
+                }
+                break;
+
+            case AttackState.SPECIAL:
+                print("special attack");
+                if (_timeUntilAttackFinished > 0f)
+                {
+                    _timeUntilAttackFinished -= Time.deltaTime;
+                }
+                else
+                {
+                    _atkState = AttackState.IDLE;
+                    // immediately clear buffer whenever specials done otherwise checking for combos might repeat recent ones done
+                    _timeUntilBufferClear = 0f;
+                }
+                break;
+        }
+    }
+
+    private void TurnCheck()
+    {
+        if (_isFacingRight && MoveInput.x < 0)
+        {
+            _isFacingRight = false;
+        }
+        else if (!_isFacingRight && MoveInput.x > 0)
+        {
+            _isFacingRight = true;
+        }
+    }
+
     void Start()
     {
         
     }
 
-    // Update is called once per frame
+
     void Update()
     {
-        AttackChecks();
-        CountTimers();
-        UpdateActionBuffer();
+        TurnCheck();
+        TransitionState();
     }
-
-    void FixedUpdate()
-    {
-        CollisionChecks();
-    }
-
-
-    private ComboInfo? ComboPerformed()
-    {
-        // loop through all of the combos and see if the actions match any of the combos defined
-        foreach (ComboInfo combo in AttackStats.Combos)
-        {
-            // get the n recent actions from the action buffer
-            List<CharAction> recActs = GetRecentActions(combo.ConsecutiveActions.Count);
-            if (recActs == combo.ConsecutiveActions)
-            {
-                return combo;
-            }
-        }
-
-        return null;
-    }
-
-    private List<CharAction> GetRecentActions(int n)
-    {
-        // sort the list and then return the n recent
-        List<CharAction> acts = new();
-        List<Tuple<CharAction, int>> recentActionsSorted = new(_prevActionsPerformed);
-        recentActionsSorted.Sort(new CharActionComparer());
-
-        for (int i = 0; i < Mathf.Min(n, recentActionsSorted.Count); i++)
-        {
-            acts.Add(recentActionsSorted[i].Item1);
-        }
-        return acts;
-    }
-
-
-    private void AttackChecks()
-    {
-        print(LookInput);
-
-        // check if combo executed
-        ComboInfo? combo = ComboPerformed();
-        if (combo != null)
-        {
-            // TODO: perform combo here
-
-            #if UNITY_EDITOR
-            Debug.Log($"Combo performed {combo}");
-            #endif
-        }
-        else if (AttackReleased && _timeUntilStrongAttack <= 0f)
-        {
-            // TODO: perform strong attack here
-
-            #if UNITY_EDITOR
-            Debug.Log("Strong Attack performed");
-            #endif
-        }
-        else if (AttackPressed)
-        {
-            // TODO: perform normal attack here
-
-            #if UNITY_EDITOR
-            Debug.Log("Normal Attack Performed");
-            #endif
-        }
-    }
-
-
-    private void CountTimers()
-    {
-        if (AttackHeld)
-        {
-            _timeUntilStrongAttack -= Time.deltaTime;
-        }
-        else
-        {
-            _timeUntilStrongAttack = AttackStats.TimeHeldForStrongAttack;
-        }
-    }
-
-    private void UpdateActionBuffer()
-    {
-        int currentFrame = Time.frameCount;
-        List<int> _indicesToRemove = new();
-
-        for (int i = 0; i < _prevActionsPerformed.Count; i++)
-        {
-            Tuple<CharAction, int> act = _prevActionsPerformed[i];
-            if (currentFrame - act.Item2 >= AttackStats.ComboBufferClearFrames)
-            {
-                _indicesToRemove.Add(i);
-            }
-        }
-
-        foreach (int index in _indicesToRemove)
-        {
-            _prevActionsPerformed.RemoveAt(index);
-        }
-
-        // read what actions have been performed this frame and add it to the actions performed
-        _prevActionsPerformed.Add(new (
-            MoveInput.x == 1 ? CharAction.MOVE_RIGHT
-            : MoveInput.x == -1 ? CharAction.MOVE_LEFT
-            : MoveInput.y == -1 ? CharAction.CROUCH
-            : !_isGrounded && JumpPressed ? CharAction.DOUBLE_JUMP
-            : JumpPressed ? CharAction.JUMP : CharAction.IDLE,
-            currentFrame));
-        _prevActionsPerformed.Add(new (
-            AttackPressed ? LookInput.x == 1 ? _isGrounded ? CharAction.NORM_ATK_GND_RIGHT : CharAction.NORM_ATK_AIR_RIGHT
-                : LookInput.x == -1 ? _isGrounded ? CharAction.NORM_ATK_GND_LEFT : CharAction.NORM_ATK_AIR_LEFT
-                : LookInput.y == 1 ? _isGrounded ? CharAction.NORM_ATK_GND_UP: CharAction.NORM_ATK_AIR_UP
-                : LookInput.y == -1 && !_isGrounded ? CharAction.NORM_ATK_AIR_DOWN : CharAction.CROUCH
-            : AttackReleased && _timeUntilStrongAttack <= 0f
-                ? LookInput.x == 1 ? _isGrounded ? CharAction.STR_ATK_GND_RIGHT : CharAction.STR_ATK_AIR_RIGHT
-                : LookInput.x == -1 ? _isGrounded ? CharAction.STR_ATK_GND_LEFT : CharAction.STR_ATK_AIR_LEFT
-                : LookInput.y == 1 ? _isGrounded ? CharAction.STR_ATK_GND_UP : CharAction.STR_ATK_AIR_UP
-                : LookInput.y == -1 ? _isGrounded ? CharAction.CROUCH : CharAction.STR_ATK_AIR_DOWN
-            : CharAction.SPECIAL : CharAction.IDLE,
-        currentFrame));
-    }
-
-
-
-    // updates the _isGrounded variable by doing a boxcast below the feet collider
-    private void IsGrounded()
-    {
-        // sets box origin to be the middle of the bottom edge
-        Vector2 boxCastOrigin = new Vector2(_feetColl.bounds.center.x, _feetColl.bounds.min.y);
-        Vector2 boxCastSize = new Vector2(_feetColl.bounds.size.x, MoveStats.GroundDetectionRayLength);
-
-        _groundHit = Physics2D.BoxCast(boxCastOrigin, boxCastSize, 0f, Vector2.down, MoveStats.GroundDetectionRayLength, MoveStats.GroundLayer);
-        if (_groundHit.collider != null)
-        {
-            _isGrounded = true;
-        }
-        else
-        {
-            _isGrounded = false;
-        }
-    }
-
-    // updates the _bumpedHead variable by doing a box cast above the body
-    private void BumpedHead()
-    {
-        Vector2 boxCastOrigin = new Vector2(_feetColl.bounds.center.x, _bodyColl.bounds.max.y);
-        Vector2 boxCastSize = new Vector2(_feetColl.bounds.size.x * MoveStats.HeadWidth, MoveStats.HeadDetectionRayLength);
-
-        _headHit = Physics2D.BoxCast(boxCastOrigin, boxCastSize, 0f, Vector2.up, MoveStats.HeadDetectionRayLength, MoveStats.GroundLayer);
-        if (_headHit.collider != null)
-        {
-            _bumpedHead = true;
-        }
-        else
-        {
-            _bumpedHead = false;
-        }
-    }
-
-    private void CollisionChecks()
-    {
-        IsGrounded();
-        BumpedHead();
-    }    
 }

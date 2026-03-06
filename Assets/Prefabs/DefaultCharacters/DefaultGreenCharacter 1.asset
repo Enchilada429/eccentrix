@@ -15,67 +15,48 @@ MonoBehaviour:
   CharacterLayer:
     serializedVersion: 2
     m_Bits: 128
-  NormalGroundAttackLeft:
-    Damage: 0
+  NormalAttackLeft:
+    Damage: 1
     Knockback: 0
-    StaggerDurationSeconds: 0
-  NormalGroundAttackRight:
-    Damage: 0
+    StaggerDuration: 0
+  NormalAttackRight:
+    Damage: 1
     Knockback: 0
-    StaggerDurationSeconds: 0
-  NormalGroundAttackUp:
-    Damage: 0
+    StaggerDuration: 0
+  NormalAttackUp:
+    Damage: 1
     Knockback: 0
-    StaggerDurationSeconds: 0
-  NormalAirAttackLeft:
-    Damage: 0
+    StaggerDuration: 0
+  NormalAttackDown:
+    Damage: 1
     Knockback: 0
-    StaggerDurationSeconds: 0
-  NormalAirAttackRight:
-    Damage: 0
+    StaggerDuration: 0
+  StrongAttackLeft:
+    Damage: 3
     Knockback: 0
-    StaggerDurationSeconds: 0
-  NormalAirAttackUp:
-    Damage: 0
+    StaggerDuration: 0
+  StrongAttackRight:
+    Damage: 3
     Knockback: 0
-    StaggerDurationSeconds: 0
-  NormalAirAttackDown:
-    Damage: 0
+    StaggerDuration: 0
+  StrongAttackUp:
+    Damage: 3
     Knockback: 0
-    StaggerDurationSeconds: 0
-  TimeHeldForStrongAttack: 3
-  StrongGroundAttackLeft:
-    Damage: 0
+    StaggerDuration: 0
+  StrongAttackDown:
+    Damage: 3
     Knockback: 0
-    StaggerDurationSeconds: 0
-  StrongGroundAttackRight:
-    Damage: 0
-    Knockback: 0
-    StaggerDurationSeconds: 0
-  StrongGroundAttackUp:
-    Damage: 0
-    Knockback: 0
-    StaggerDurationSeconds: 0
-  StrongAirAttackLeft:
-    Damage: 0
-    Knockback: 0
-    StaggerDurationSeconds: 0
-  StrongAirAttackRight:
-    Damage: 0
-    Knockback: 0
-    StaggerDurationSeconds: 0
-  StrongAirAttackUp:
-    Damage: 0
-    Knockback: 0
-    StaggerDurationSeconds: 0
-  StrongAirAttackDown:
-    Damage: 0
-    Knockback: 0
-    StaggerDurationSeconds: 0
-  Combos:
-  - ConsecutiveActions: 0000000002000000030000000400000005000000
+    StaggerDuration: 0
+  TimeToExecuteStrongAttack: 2.5
+  SpecialCombos:
+  - Buffer: 000000000100000000000000
     Attack:
-      Damage: 20
+      Damage: 5
       Knockback: 0
-      StaggerDurationSeconds: 0
-  ComboBufferClearFrames: 120
+      StaggerDuration: 0
+  - Buffer: 020000000200000002000000
+    Attack:
+      Damage: 10
+      Knockback: 0
+      StaggerDuration: 0
+  TimeBeforeBufferClear: 2
