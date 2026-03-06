@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 
-public class StandardCharacterAttack : MonoBehaviour
+public class PlayerAttackController : MonoBehaviour
 {
     public enum AttackState
     {

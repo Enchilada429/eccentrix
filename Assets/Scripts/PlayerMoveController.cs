@@ -8,7 +8,7 @@ using UnityEngine.InputSystem;
 /* FROM https://www.youtube.com/watch?v=zHSWG05byEc
 on how to make a 2d platformer controller
 */
-public class StandardCharacterMovement : MonoBehaviour
+public class PlayerMoveController : MonoBehaviour
 {
     [Header("References")]
     public PlayerMovementStats MoveStats;

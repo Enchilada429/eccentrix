@@ -23,10 +23,10 @@ public struct AttackInfo
 [Serializable]
 public struct ComboInfo
 {
-    public List<StandardCharacterAttack.AttackDirection> Buffer;
+    public List<PlayerAttackController.AttackDirection> Buffer;
     public AttackInfo Attack;
 
-    public ComboInfo(List<StandardCharacterAttack.AttackDirection> buffer, AttackInfo attack)
+    public ComboInfo(List<PlayerAttackController.AttackDirection> buffer, AttackInfo attack)
     {
         Buffer = buffer;
         Attack = attack;
