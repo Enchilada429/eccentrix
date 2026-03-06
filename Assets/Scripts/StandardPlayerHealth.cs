@@ -6,18 +6,22 @@ using UnityEngine.Events;
 public class StandardPlayerHealth : MonoBehaviour
 {
     [SerializeField, Min(1)] private int MaxHealth = 100;
-    [SerializeField, Min(1)] private int CurrentHealth = 100;
+    private int _currentHealth = 100;
 
 
     [SerializeField] private UnityEvent onHit;
     [SerializeField] private UnityEvent onDeath;
 
 
+    void Awake()
+    {
+        _currentHealth = MaxHealth;
+    }
 
     public void TakeDamage(int dmg)
     {
-        CurrentHealth -= dmg;
-        if (CurrentHealth > 0)
+        _currentHealth -= dmg;
+        if (_currentHealth > 0)
         {
             onHit.Invoke();
         }
